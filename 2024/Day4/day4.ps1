@@ -5,7 +5,8 @@ $wordSearch = Get-Content .\2024\Day4\input.txt
 # find coordinates of X - this will be starting points
 function Get-XCoords {
     param (
-        $wordSearch
+        $wordSearch,
+        $letter = 'X'
     )
     $xCoords = @()
     $x = 0
@@ -17,8 +18,8 @@ function Get-XCoords {
         foreach($char in $row.ToCharArray()){
             Write-Debug ('x={0},y={1}' -f $x, $y)
             Write-Debug ('char: {0}' -f $char)
-            if($char -eq 'x') {
-                Write-Verbose ('X marks the spot! {0},{1}' -f $x, $y)
+            if($char -eq $letter) {
+                Write-Verbose ('{0} marks the spot! {1},{2}' -f $letter, $x, $y)
                 $xCoords += [PSCustomObject]@{
                     x = $x
                     y = $y
@@ -171,6 +172,7 @@ function Test-XCoord {
     $coordsNextLetter
 }
 
+#region part 1 
 $xCoords = Get-XCoords -wordSearch $wordSearch
 
 #DEBUG: Testing the A at (4,9)
@@ -200,3 +202,46 @@ foreach ($xCoord in $xCoords) {
     }
 }
 write-host ('part 1: {0}' -f $count)
+#endregion
+
+#region part 2
+function Test-Corners {
+    param (
+        $wordSearch,
+        $Coord
+    )
+    Write-Debug ('Testing the {0} at ({1},{2})' -f 'A', $Coord.x, $Coord.y)
+    
+    # diagonals
+    if($Coord.Y -ne 0 -and $Coord.X -ne 0 ) {
+        $directionCode1 = $wordSearch[$Coord.Y-1][$Coord.X-1]
+    }
+    if($Coord.Y -ne 0 -and $Coord.X -le $wordSearch[$Coord.Y].Length-2) {
+        $directionCode3 = $wordSearch[$Coord.Y-1][$Coord.X+1]
+    }
+    if($Coord.Y -le $wordSearch.Length-2 -and $Coord.X -le $wordSearch[$Coord.Y].Length-2) {
+        $directionCode8 = $wordSearch[$Coord.Y+1][$Coord.X+1]
+    }
+    if($Coord.Y -le $wordSearch.Length-2 -and $Coord.X -ne 0) {
+        $directionCode6 = $wordSearch[$Coord.Y+1][$Coord.X-1]
+    }
+
+    if(($directionCode6 -eq 'M' -and $directionCode3 -eq 'S') -or ($directionCode6 -eq 'S' -and $directionCode3 -eq 'M')) {
+        if(($directionCode1 -eq 'M' -and $directionCode8 -eq 'S') -or ($directionCode1 -eq 'S' -and $directionCode8 -eq 'M')) {
+            $true
+        }
+    }
+
+    Remove-Variable directionCode1, directionCode3, directionCode6, directionCode8 -ErrorAction SilentlyContinue
+}
+
+$aCoords = Get-XCoords -wordSearch $wordSearch -letter A
+
+$count = 0 
+$aCoords.foreach{
+    if(Test-Corners -wordSearch $wordSearch -Coord $_) {
+        $count++
+    }
+} 
+write-host ('part 2: {0}' -f $count)
+#endregion
